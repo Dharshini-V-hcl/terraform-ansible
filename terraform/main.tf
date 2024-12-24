@@ -5,7 +5,7 @@ provider "aws" {
 resource "aws_instance" "nginx" {
   ami           = var.ami
   instance_type = var.instance_type
-  key_name      = Dharshini
+  key_name      = "Dharshini"
   security_groups = [aws_security_group.nginx_sg.name]
 
   tags = {
