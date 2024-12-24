@@ -22,19 +22,19 @@ jobs:
       with:
         terraform_version: 1.5.7
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_region: ${{ env.AWS_REGION }}
-
     - name: Save PEM Key
       env:
         AWS_PEM_KEY: ${{ secrets.AWS_PEM_KEY }}
       run: |
         echo "$AWS_PEM_KEY" > terraform/Dharshini.pem
         chmod 400 terraform/Dharshini.pem
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Initialize Terraform
       working-directory: terraform/
@@ -56,4 +56,5 @@ jobs:
     - name: Run Ansible Playbook
       run: |
         ansible-playbook -i ansible/inventory ansible/playbook.yml --private-key terraform/Dharshini.pem
+
 
