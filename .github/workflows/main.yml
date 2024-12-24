@@ -1,0 +1,51 @@
+name: Deploy Terraform and Ansible
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: "us-east-1"
+      TF_VAR_region: "us-east-1"
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.7
+
+    - name: Save PEM Key
+      env:
+        AWS_PEM_KEY: ${{ secrets.AWS_PEM_KEY }}
+      run: |
+        echo "$AWS_PEM_KEY" > terraform/Dharshini.pem
+        chmod 400 terraform/Dharshini.pem
+
+    - name: Initialize Terraform
+      working-directory: terraform/
+      run: terraform init
+
+    - name: Plan Terraform
+      working-directory: terraform/
+      run: terraform plan -out=tfplan -var "key_name=Dharshini"
+
+    - name: Apply Terraform
+      working-directory: terraform/
+      run: terraform apply -auto-approve tfplan
+
+    - name: Install Ansible
+      run: |
+        sudo apt update
+        sudo apt install -y ansible
+
+    - name: Run Ansible Playbook
+      run: |
+        ansible-playbook -i ansible/inventory ansible/playbook.yml --private-key terraform/Dharshini.pem
