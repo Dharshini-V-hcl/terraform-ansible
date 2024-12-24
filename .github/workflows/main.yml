@@ -55,7 +55,9 @@ jobs:
         
     -  name: Disable Strict Host Key Checking
        run: |
+        mkdir -p ~/.ssh
         echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+        chmod 600 ~/.ssh/config
 
     - name: Run Ansible Playbook
       run: |
