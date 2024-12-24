@@ -48,10 +48,6 @@ jobs:
       working-directory: terraform/
       run: terraform apply -auto-approve tfplan
 
-    - name: terraform deploy
-      working-directory: terraform/
-      run: terraform destroy -auto-approve
-
     - name: Install Ansible
       run: |
         sudo apt update
