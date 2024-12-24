@@ -57,4 +57,3 @@ jobs:
       run: |
         ansible-playbook -i ansible/inventory ansible/playbook.yml --private-key terraform/Dharshini.pem
 
-
