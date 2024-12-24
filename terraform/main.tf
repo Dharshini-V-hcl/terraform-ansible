@@ -5,7 +5,7 @@ provider "aws" {
 resource "aws_instance" "nginx" {
   ami           = var.ami
   instance_type = var.instance_type
-  key_name      = var.key_name
+  key_name      = Dharshini
   security_groups = [aws_security_group.nginx_sg.name]
 
   tags = {
@@ -15,7 +15,7 @@ resource "aws_instance" "nginx" {
   provisioner "local-exec" {
     command = <<EOT
       echo "[nginx]" > ../ansible/inventory
-      echo "${self.public_ip} ansible_user=ubuntu ansible_private_key_file=../terraform/key-pair.pem" >> ../ansible/inventory
+      echo "${self.public_ip} ansible_user=ubuntu ansible_private_key_file=../terraform/Dharshini.pem" >> ../ansible/inventory
     EOT
   }
 }
