@@ -43,7 +43,9 @@ jobs:
       - name: Get Public IP
         id: get_public_ip
         working-directory: terraform/
-        run: echo "::set-output name=ip::$(terraform output -raw public_ip)"
+        run: |
+          echo "PUBLIC_IP=$(terraform output -raw public_ip)" >> $GITHUB_ENV
+          echo "::set-output name=ip::$PUBLIC_IP"  # Keep this line for backwards compatibility (optional)
 
       - name: Save SSH Key and Update Inventory
         run: |
