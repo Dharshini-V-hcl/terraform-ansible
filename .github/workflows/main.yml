@@ -9,8 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: "us-east-1"
-      TF_VAR_region: "us-east-1"
+      AWS_REGION: us-east-1
+      TF_VAR_region: us-east-1
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,19 +21,12 @@ jobs:
         with:
           terraform_version: 1.5.7
 
-      - name: Save PEM Key
-        env:
-          AWS_PEM_KEY: ${{ secrets.AWS_PEM_KEY }}
-        run: |
-          echo "$AWS_PEM_KEY" > terraform/ansible.pem
-          chmod 400 terraform/ansible.pem
-
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2 # Use v2 for better security
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }} # Use env variable
 
       - name: Initialize Terraform
         working-directory: terraform/
@@ -46,28 +40,24 @@ jobs:
         working-directory: terraform/
         run: terraform apply -auto-approve tfplan
 
-      - name: Save Inventory
+      - name: Get Public IP
+        id: get_public_ip
         working-directory: terraform/
-        run: |
-          echo "all:" > ../ansible/inventory.yaml
-          echo "  hosts:" >> ../ansible/inventory.yaml
-          echo "    $(terraform output -raw public_ip):" >> ../ansible/inventory.yaml
-          echo "      ansible_user: ubuntu" >> ../ansible/inventory.yaml
-          echo "      ansible_ssh_private_key_file: terraform/ansible.pem" >> ../ansible/inventory.yaml
+        run: echo "::set-output name=ip::$(terraform output -raw public_ip)"
 
-      - name: Install Ansible
-        run: |
-          sudo apt update
-          sudo apt install -y ansible
-
-      - name: Disable Strict Host Key Checking
+      - name: Save SSH Key and Update Inventory
         run: |
           mkdir -p ~/.ssh
-          echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-          chmod 600 ~/.ssh/config
+          echo "${{ secrets.AWS_PEM_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ steps.get_public_ip.outputs.ip }} >> ~/.ssh/known_hosts # Add EC2 host key
+
+          echo "[all]" > ansible/inventory.ini # Use ini format for simplicity
+          echo "${{ steps.get_public_ip.outputs.ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
 
       - name: Run Ansible Playbook
-        run: |
-          ansible-playbook -i ansible/inventory.yaml ansible/playbook.yml --private-key terraform/ansible.pem -vvvv
-
-
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml -vvv # Reduced verbosity unless needed
