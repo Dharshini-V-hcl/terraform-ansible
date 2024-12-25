@@ -22,11 +22,11 @@ jobs:
           terraform_version: 1.5.7
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2 # Use v2 for better security
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }} # Use env variable
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Initialize Terraform
         working-directory: terraform/
@@ -45,7 +45,8 @@ jobs:
         working-directory: terraform/
         run: |
           export PUBLIC_IP=$(terraform output -raw public_ip)
-          echo "::set-output name=ip::$(echo $PUBLIC_IP)"  # Optional, filter output
+          echo "::set-output name=ip::$PUBLIC_IP" # Optional for backwards compatibility
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV # Set environment variable
 
       - name: Save SSH Key and Update Inventory
         run: |
@@ -53,12 +54,13 @@ jobs:
           echo "${{ secrets.AWS_PEM_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          ssh-keyscan ${{ steps.get_public_ip.outputs.ip }} >> ~/.ssh/known_hosts # Add EC2 host key
-          echo "[all]" > ansible/inventory.ini # Use ini format for simplicity
-          echo "${{ steps.get_public_ip.outputs.ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+          ssh-keyscan ${{ env.PUBLIC_IP }} >> ~/.ssh/known_hosts # Use environment variable
+          echo "[all]" > ansible/inventory.ini
+          echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini # Use environment variable
+          cat ansible/inventory.ini # Debug: Print inventory content
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
       - name: Run Ansible Playbook
-        run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml -vvv # Reduced verbosity unless needed
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml -vvv
