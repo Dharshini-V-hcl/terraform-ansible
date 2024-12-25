@@ -55,7 +55,7 @@ jobs:
           echo "${{ secrets.AWS_PEM_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           echo "[all]" > ansible/inventory.ini
-          echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+          echo "${{ env.PUBLIC_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
 
           # Debug: Print inventory content
           cat ansible/inventory.ini
