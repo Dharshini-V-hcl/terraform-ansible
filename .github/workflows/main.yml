@@ -45,10 +45,6 @@ jobs:
       - name: Apply Terraform
         working-directory: terraform/
         run: terraform apply -auto-approve tfplan
-
-      - name: terraform destroy
-        working-directory: terraform/
-        run: terraform destroy -auto-approve 
  
       - name: Save Inventory
         working-directory: terraform/
