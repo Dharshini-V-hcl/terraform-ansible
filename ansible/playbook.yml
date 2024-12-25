@@ -1,5 +1,5 @@
 ---
-- hosts: nginx
+- hosts: all
   become: true
   tasks:
     - name: Update apt packages
@@ -15,4 +15,4 @@
       service:
         name: nginx
         state: started
-        enabled: yes 
+        enabled: yes
