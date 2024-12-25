@@ -1,10 +1,10 @@
 name: Deploy Terraform and Ansible
- 
+
 on:
   push:
     branches:
       - main
- 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,56 +14,60 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
- 
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
- 
+
       - name: Save PEM Key
         env:
           AWS_PEM_KEY: ${{ secrets.AWS_PEM_KEY }}
         run: |
           echo "$AWS_PEM_KEY" > terraform/ansible.pem
           chmod 400 terraform/ansible.pem
- 
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
- 
+
       - name: Initialize Terraform
         working-directory: terraform/
         run: terraform init
- 
+
       - name: Plan Terraform
         working-directory: terraform/
         run: terraform plan -out=tfplan -var "key_name=ansible"
- 
+
       - name: Apply Terraform
         working-directory: terraform/
         run: terraform apply -auto-approve tfplan
- 
+
       - name: Save Inventory
         working-directory: terraform/
         run: |
-          echo "[nginx]" > ../ansible/inventory
-          echo "$(terraform output -raw public_ip) ansible_user=ubuntu ansible_ssh_private_key_file=terraform/ansible.pem" >> ../ansible/inventory
- 
+          echo "all:" > ../ansible/inventory.yaml
+          echo "  hosts:" >> ../ansible/inventory.yaml
+          echo "    $(terraform output -raw public_ip):" >> ../ansible/inventory.yaml
+          echo "      ansible_user: ubuntu" >> ../ansible/inventory.yaml
+          echo "      ansible_ssh_private_key_file: terraform/ansible.pem" >> ../ansible/inventory.yaml
+
       - name: Install Ansible
         run: |
           sudo apt update
           sudo apt install -y ansible
- 
+
       - name: Disable Strict Host Key Checking
         run: |
           mkdir -p ~/.ssh
           echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
- 
+
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i ansible/inventory ansible/playbook.yml --private-key terraform/ansible.pem -vvvv
+          ansible-playbook -i ansible/inventory.yaml ansible/playbook.yml --private-key terraform/ansible.pem -vvvv
+
 
