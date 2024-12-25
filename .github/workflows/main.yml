@@ -52,7 +52,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           ssh-keyscan ${{ steps.get_public_ip.outputs.ip }} >> ~/.ssh/known_hosts # Add EC2 host key
-
           echo "[all]" > ansible/inventory.ini # Use ini format for simplicity
           echo "${{ steps.get_public_ip.outputs.ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
 
