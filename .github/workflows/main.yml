@@ -1,4 +1,4 @@
-name: Deploy Terraform and Ansible
+name: Deploy and Configure Nginx
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
       TF_VAR_region: us-east-1
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Terraform
@@ -28,44 +28,34 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Initialize Terraform
-        working-directory: terraform/
+      - name: Terraform Init
+        working-directory: terraform
         run: terraform init
 
-      - name: Plan Terraform
-        working-directory: terraform/
-        run: terraform plan -out=tfplan -var "key_name=ansible"
-
-      - name: Apply Terraform
-        working-directory: terraform/
-        run: terraform apply -auto-approve tfplan
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
 
       - name: Get Public IP
         id: get_public_ip
-        working-directory: terraform/
+        working-directory: terraform
         run: |
           PUBLIC_IP=$(terraform output -raw public_ip)
-          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV  # Set environment variable
-
-          echo "::set-output name=ip::$PUBLIC_IP"
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Save SSH Key and Update Inventory
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.AWS_PEM_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ env.PUBLIC_IP }} >> ~/.ssh/known_hosts
           echo "[all]" > ansible/inventory.ini
           echo "${{ env.PUBLIC_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
-
-          # Debug: Print inventory content
-          cat ansible/inventory.ini
+          cat ansible/inventory.ini # Debug: Print inventory content
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
-
-      - name: Wait for SSH (Important!)
-        run: sleep 40
-
 
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml -vvv
