@@ -6,3 +6,4 @@ all:
       ansible_ssh_private_key_file: /home/runner/work/terraform-ansible/terraform-ansible/terraform/ansible.pem
       ansible_ssh_user: ec2-user
 EOF
+
