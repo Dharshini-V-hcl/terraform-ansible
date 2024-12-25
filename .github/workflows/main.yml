@@ -54,11 +54,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.AWS_PEM_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          ssh-keyscan ${{ env.PUBLIC_IP }} >> ~/.ssh/known_hosts # Use environment variable
           echo "[all]" > ansible/inventory.ini
-          echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini # Use environment variable
-          cat ansible/inventory.ini # Debug: Print inventory content
+          echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
+
+          # Debug: Print inventory content
+          cat ansible/inventory.ini
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
