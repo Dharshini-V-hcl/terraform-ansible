@@ -1,20 +1,19 @@
----
-- hosts: all
-  become: true
+- name: Installing & starting ngnix
+  hosts: all
+  become: yes
   tasks:
-    - name: Update dnf packages
-      dnf:
+    - name: Installing ngnix
+      yum:
         update_cache: yes
-        name: '*'
+        name: nginx
         state: latest
 
-    - name: Install Nginx
-      dnf:
-        name: nginx
-        state: present
-
-    - name: Start Nginx service
-      service:
+    - name: Starting nginx
+      systemd:
         name: nginx
         state: started
+
+    - name: Enable the NGINX service during boot process
+      systemd:
+        name: nginx
         enabled: yes
