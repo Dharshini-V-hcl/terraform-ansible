@@ -36,9 +36,16 @@ jobs:
         working-directory: terraform/
         run: terraform plan -out=tfplan -var "key_name=ansible"
 
-      - name: Apply Terraform
-        working-directory: terraform/
-        run: terraform apply -auto-approve tfplan
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      - name: Debug Terraform Output
+        working-directory: terraform
+        run: |
+          terraform output
+          terraform output -json
+          echo "Raw IP: $(terraform output -raw public_ip)" # Most important!
 
       - name: Get Public IP
         id: get_public_ip
