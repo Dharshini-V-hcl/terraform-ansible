@@ -2,12 +2,14 @@
 - hosts: all
   become: true
   tasks:
-    - name: Update apt packages
-      apt:
+    - name: Update dnf packages
+      dnf:
         update_cache: yes
+        name: '*'
+        state: latest
 
     - name: Install Nginx
-      apt:
+      dnf:
         name: nginx
         state: present
 
