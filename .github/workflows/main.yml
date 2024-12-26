@@ -40,6 +40,10 @@ jobs:
         working-directory: terraform
         run: terraform apply -auto-approve
 
+      - name: terraform destroy
+        working-directory: terraform
+        run: terraform destroy -auto-approve
+
       - name: Debug Terraform Output
         working-directory: terraform
         run: |
